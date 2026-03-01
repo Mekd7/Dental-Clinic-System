@@ -6,6 +6,7 @@ import {
   ClipboardPlus,
   CreditCard,
   Activity,
+  CheckCircle2,
 } from "lucide-react";
 
 export function DashboardNav({
@@ -24,7 +25,12 @@ export function DashboardNav({
       { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
     ],
     DOCTOR: [
-      { name: "Waiting Room", href: "/dashboard/waiting-room", icon: Clock }, // Updated path
+      { name: "Waiting Room", href: "/dashboard/waiting-room", icon: Clock },
+      {
+        name: "Completed Today",
+        href: "/dashboard/completed-today",
+        icon: CheckCircle2,
+      },
       { name: "My Exams", href: "/dashboard/history", icon: Activity },
     ],
     PATIENT: [

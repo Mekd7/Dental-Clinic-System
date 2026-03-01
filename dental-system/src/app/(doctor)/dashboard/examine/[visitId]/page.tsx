@@ -9,12 +9,14 @@ import { AssessmentForm } from "./_components/AssessmentForm";
 import { DentalChartForm } from "./_components/DentalChartForm";
 import { TreatmentPlanForm } from "./_components/TreatmentPlanForm";
 import { RecentHistoryPanel } from "./_components/RecentHistoryPanel";
+import { Archive } from "lucide-react";
+import Link from "next/link";
 
 export default async function ExaminationPage({
   params,
 }: {
   // Fix: params must be treated as a Promise in Next.js 15+
-  params: Promise<{ visitId: string }>; 
+  params: Promise<{ visitId: string }>;
 }) {
   // Fix: Await the params before destructuring
   const { visitId } = await params;
@@ -37,14 +39,11 @@ export default async function ExaminationPage({
       })
     : [];
 
-  const previousRecord =
-    history.find((record) => record.visitId !== visitId) ?? null;
-
   if (!visit) {
     return (
       <div className="p-20 text-center space-y-4">
         <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-           <span className="text-red-500 text-2xl">!</span>
+          <span className="text-red-500 text-2xl">!</span>
         </div>
         <h1 className="text-2xl font-bold text-slate-800">
           Visit Session Not Found
@@ -87,13 +86,22 @@ export default async function ExaminationPage({
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <Badge className="bg-gold-600 text-slate-900 font-bold px-4 py-1">
-              SESSION LIVE
-            </Badge>
-            <p className="text-[9px] text-slate-500 uppercase mt-1 font-bold">
-              Attending: Dr. {visit.doctor?.name || "Unassigned"}
-            </p>
+          <div className="text-right flex items-center gap-4">
+            <Link
+              href={`/dashboard/patients/${visit.patientId}/history`}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-gold-500 transition-colors text-xs font-bold uppercase tracking-wider"
+            >
+              <Archive className="h-3.5 w-3.5" />
+              View Full Archive
+            </Link>
+            <div>
+              <Badge className="bg-gold-600 text-slate-900 font-bold px-4 py-1">
+                SESSION LIVE
+              </Badge>
+              <p className="text-[9px] text-slate-500 uppercase mt-1 font-bold">
+                Attending: Dr. {visit.doctor?.name || "Unassigned"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -147,7 +155,6 @@ export default async function ExaminationPage({
                   patientId={visit.patientId}
                   doctorId={visit.doctorId}
                   initialData={currentRecord}
-                  previousRecord={previousRecord}
                 />
               </div>
 

@@ -2,7 +2,7 @@
 
 import { db } from "@/drizzle/db";
 import { visits } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -64,4 +64,32 @@ export async function completeVisitAction(
   }
 
   redirect(options?.redirectTo ?? "/dashboard/waiting-room");
+}
+
+export async function reopenVisitAction(visitId: string) {
+  // Only allow reopening visits completed within the last 24 hours.
+  // We do NOT change the status — the visit stays COMPLETED so it remains
+  // visible in the "Completed Today" list. We just redirect the doctor
+  // back to the examination page so they can make edits.
+  const visit = await db.query.visits.findFirst({
+    where: and(eq(visits.id, visitId), eq(visits.status, "COMPLETED")),
+  });
+
+  if (!visit) {
+    redirect("/dashboard/completed-today");
+  }
+
+  const checkInTime = visit.checkInTime;
+  if (checkInTime) {
+    const hoursSince =
+      (Date.now() - new Date(checkInTime).getTime()) / (1000 * 60 * 60);
+    if (hoursSince > 24) {
+      redirect("/dashboard/completed-today");
+    }
+  }
+
+  revalidatePath("/dashboard/completed-today");
+  revalidatePath(`/dashboard/examine/${visitId}`);
+
+  redirect(`/dashboard/examine/${visitId}`);
 }

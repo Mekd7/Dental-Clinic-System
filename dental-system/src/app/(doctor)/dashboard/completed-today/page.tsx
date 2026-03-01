@@ -1,20 +1,23 @@
 import { db } from "@/drizzle/db";
 import { visits } from "@/drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
-import { Button } from "@/components/ui/button";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
-import { startExaminationAction } from "@/app/actions/visits";
-import { Clock, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { reopenVisitAction } from "@/app/actions/visits";
+import { CheckCircle2, RotateCcw } from "lucide-react";
 
-export default async function DoctorQueuePage() {
+export default async function CompletedTodayPage() {
   const CLINIC_ID = "default-clinic-id";
   const MOCK_DOCTOR_ID = "mock-doctor-id";
 
-  const queue = await db.query.visits.findMany({
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const completedToday = await db.query.visits.findMany({
     where: and(
       eq(visits.clinicId, CLINIC_ID),
       eq(visits.doctorId, MOCK_DOCTOR_ID),
-      eq(visits.status, "WAITING"),
+      eq(visits.status, "COMPLETED"),
+      gte(visits.checkInTime, twentyFourHoursAgo),
     ),
     with: { patient: true },
     orderBy: [desc(visits.checkInTime)],
@@ -24,34 +27,36 @@ export default async function DoctorQueuePage() {
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Patient Queue</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Completed Today</h1>
           <p className="text-gold-600 font-semibold uppercase text-xs tracking-widest mt-1">
-            Golden Dental &bull; Dr. Abel Solomon
+            Visits completed within the last 24 hours
           </p>
         </div>
-        <Badge className="bg-gold-500 text-slate-900 hover:bg-gold-500">
-          {queue.length} Waiting
+        <Badge
+          variant="outline"
+          className="text-emerald-600 border-emerald-200 bg-emerald-50"
+        >
+          {completedToday.length} Completed
         </Badge>
       </div>
 
-      {/* WAITING QUEUE — single-column vertical list */}
       <div className="space-y-4">
-        {queue.length === 0 ? (
+        {completedToday.length === 0 ? (
           <div className="py-20 text-center border-2 border-dashed rounded-3xl bg-slate-50">
-            <Clock className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+            <CheckCircle2 className="mx-auto h-12 w-12 text-slate-300 mb-4" />
             <p className="text-slate-500 font-medium">
-              No patients in the queue.
+              No completed visits in the last 24 hours.
             </p>
           </div>
         ) : (
-          queue.map((visit, index) => (
+          completedToday.map((visit) => (
             <div
               key={visit.id}
-              className="flex items-center gap-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+              className="flex items-center gap-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"
             >
-              {/* Order number */}
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gold-500 text-slate-900 flex items-center justify-center font-black text-sm">
-                {index + 1}
+              {/* Status dot */}
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
 
               {/* Patient info */}
@@ -60,16 +65,16 @@ export default async function DoctorQueuePage() {
                   <p className="text-lg font-bold text-slate-800 truncate">
                     {visit.patient.name}
                   </p>
-                  <span className="text-xs font-mono text-gold-700">
+                  <span className="text-xs font-mono text-slate-500">
                     {visit.patient.cardId}
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 mt-1 truncate">
-                  {visit.reason}
+                  {visit.reason || "No reason recorded"}
                 </p>
               </div>
 
-              {/* Check-in time */}
+              {/* Time */}
               <div className="flex-shrink-0 text-right">
                 <Badge variant="outline" className="font-mono text-[10px]">
                   {new Date(visit.checkInTime!).toLocaleTimeString([], {
@@ -79,11 +84,14 @@ export default async function DoctorQueuePage() {
                 </Badge>
               </div>
 
-              {/* Action */}
-              <form action={startExaminationAction.bind(null, visit.id)}>
-                <Button className="flex-shrink-0 bg-slate-900 hover:bg-gold-600 text-white group">
-                  Start
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              {/* Re-open action */}
+              <form action={reopenVisitAction.bind(null, visit.id)}>
+                <Button
+                  variant="outline"
+                  className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-50 group"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4 group-hover:-rotate-45 transition-transform" />
+                  Edit
                 </Button>
               </form>
             </div>

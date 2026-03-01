@@ -8,33 +8,33 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { saveVitalsAction } from "@/app/actions/exams";
-import type { ExaminationRecord } from "@/drizzle/schema";
 
-type VitalsSnapshot = Pick<
-  ExaminationRecord,
-  | "temp"
-  | "bp"
-  | "diabeticLevel"
-  | "chiefComplaint"
-  | "medicalHistory"
-  | "otherMedicalHX"
-  | "date"
->;
-
-type MedicalHistorySnapshot = NonNullable<VitalsSnapshot["medicalHistory"]>;
+interface MedicalHistory {
+  cardiac: boolean;
+  diabetic: boolean;
+  allergy: boolean;
+  giProblem: boolean;
+  pregnant: boolean;
+}
 
 interface VitalsFormProps {
   visitId: string;
   patientId: string;
   doctorId: string;
-  initialData?: VitalsSnapshot | null;
-  previousRecord?: VitalsSnapshot | null;
+  initialData?: {
+    temp?: string | null;
+    bp?: string | null;
+    diabeticLevel?: string | null;
+    chiefComplaint?: string | null;
+    medicalHistory?: MedicalHistory | null;
+    otherMedicalHX?: string | null;
+  } | null;
 }
 
 const medicalHistoryFields: Array<{
   id: string;
   label: string;
-  key: keyof MedicalHistorySnapshot;
+  key: keyof MedicalHistory;
 }> = [
   { id: "cardiac", label: "Cardiac Problem", key: "cardiac" },
   { id: "diabetic", label: "Diabetic", key: "diabetic" },
@@ -48,7 +48,6 @@ export function VitalsForm({
   patientId,
   doctorId,
   initialData,
-  previousRecord,
 }: VitalsFormProps) {
   const [loading, setLoading] = useState(false);
   const historySnapshot = initialData?.medicalHistory ?? undefined;
@@ -90,36 +89,6 @@ export function VitalsForm({
 
   return (
     <form onSubmit={handleSave} className="space-y-8">
-      {previousRecord && (
-        <div className="rounded-2xl border bg-slate-50 p-4 shadow-inner">
-          <p className="text-xs font-semibold uppercase text-slate-500 tracking-widest">
-            Last Visit Snapshot
-          </p>
-          <div className="mt-2 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
-            <div>
-              <p className="text-xs uppercase text-slate-400">Temp</p>
-              <p className="font-semibold">{previousRecord.temp || "--"}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">BP</p>
-              <p className="font-semibold">{previousRecord.bp || "--"}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">Sugar</p>
-              <p className="font-semibold">
-                {previousRecord.diabeticLevel || "--"}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-slate-500">
-            Recorded on{" "}
-            {previousRecord.date
-              ? new Date(previousRecord.date).toLocaleDateString()
-              : "--"}
-          </p>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-gold-700 font-bold uppercase text-xs tracking-wider">
